@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { movies as initialMovies, users as initialUsers, leases as initialLeases } from '../data/mockData';
-import { Movie, User, Lease } from '../types/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import type { Tables } from '@/integrations/supabase/types';
 import MovieCard from '../components/MovieCard';
 import UserManagement from '../components/UserManagement';
 import LeaseManagement from '../components/LeaseManagement';
@@ -10,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Film, Search, Users, Calendar, TrendingUp, ArrowUpDown } from 'lucide-react';
+import { Film, Search, Users, Calendar, TrendingUp, ArrowUpDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+type User = Tables<'users'>;
+type Movie = Tables<'movies'>;
+
 const Index = () => {
-  const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [leases, setLeases] = useState<Lease[]>(initialLeases);
+  const { users, movies, leases, loading, error, addUser, rentMovie, returnMovie } = useSupabaseData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Available' | 'Leased'>('all');
   const [movieSortBy, setMovieSortBy] = useState<'title' | 'director' | 'release_year' | 'status'>('title');
@@ -81,7 +82,7 @@ const Index = () => {
     setShowRentDialog(true);
   };
 
-  const confirmRent = () => {
+  const confirmRent = async () => {
     if (!selectedUser || !selectedMovieId) {
       toast({
         title: "Error",
@@ -91,75 +92,86 @@ const Index = () => {
       return;
     }
 
-    const user = users.find(u => u.user_id === selectedUser);
-    const movie = movies.find(m => m.movie_id === selectedMovieId);
-    
-    if (!user || !movie) return;
+    try {
+      const user = users.find(u => u.user_id === selectedUser);
+      const movie = movies.find(m => m.movie_id === selectedMovieId);
+      
+      await rentMovie(selectedMovieId, selectedUser);
+      
+      setShowRentDialog(false);
+      setSelectedUser(null);
+      setSelectedMovieId(null);
 
-    // Update movie status
-    setMovies(prevMovies => 
-      prevMovies.map(m => 
-        m.movie_id === selectedMovieId 
-          ? { ...m, status: 'Leased' as const }
-          : m
-      )
-    );
-
-    // Create new lease
-    const newLease: Lease = {
-      lease_id: Math.max(...leases.map(l => l.lease_id)) + 1,
-      user_id: selectedUser,
-      movie_id: selectedMovieId,
-      lease_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'Active',
-      created_at: new Date().toISOString(),
-      user_name: user.name,
-      movie_title: movie.title
-    };
-
-    setLeases(prevLeases => [...prevLeases, newLease]);
-    setShowRentDialog(false);
-    setSelectedUser(null);
-    setSelectedMovieId(null);
-
-    toast({
-      title: "Success",
-      description: `${movie.title} has been rented to ${user.name}`,
-    });
+      toast({
+        title: "Success",
+        description: `${movie?.title} has been rented to ${user?.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to rent movie. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleReturnMovie = (leaseId: number) => {
-    const lease = leases.find(l => l.lease_id === leaseId);
-    if (!lease) return;
-
-    // Update lease status
-    setLeases(prevLeases =>
-      prevLeases.map(l =>
-        l.lease_id === leaseId
-          ? { ...l, status: 'Returned' as const, return_date: new Date().toISOString().split('T')[0] }
-          : l
-      )
-    );
-
-    // Update movie status
-    setMovies(prevMovies =>
-      prevMovies.map(m =>
-        m.movie_id === lease.movie_id
-          ? { ...m, status: 'Available' as const }
-          : m
-      )
-    );
+  const handleReturnMovie = async (leaseId: number) => {
+    try {
+      const lease = leases.find(l => l.lease_id === leaseId);
+      await returnMovie(leaseId);
+      
+      toast({
+        title: "Movie Returned",
+        description: `${lease?.movie_title} has been successfully returned`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to return movie. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleAddUser = (newUserData: Omit<User, 'user_id' | 'created_at'>) => {
-    const newUser: User = {
-      ...newUserData,
-      user_id: Math.max(...users.map(u => u.user_id)) + 1,
-      created_at: new Date().toISOString()
-    };
-    setUsers(prevUsers => [...prevUsers, newUser]);
+  const handleAddUser = async (newUserData: Omit<User, 'user_id' | 'created_at'>) => {
+    try {
+      await addUser(newUserData);
+      toast({
+        title: "Success",
+        description: "User added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add user. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500 mx-auto mb-4" />
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 text-lg mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">

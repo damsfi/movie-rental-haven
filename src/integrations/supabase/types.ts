@@ -9,7 +9,108 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leases: {
+        Row: {
+          created_at: string | null
+          due_date: string
+          lease_date: string
+          lease_id: number
+          movie_id: number | null
+          return_date: string | null
+          status: string | null
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date: string
+          lease_date: string
+          lease_id?: number
+          movie_id?: number | null
+          return_date?: string | null
+          status?: string | null
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string
+          lease_date?: string
+          lease_id?: number
+          movie_id?: number | null
+          return_date?: string | null
+          status?: string | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leases_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movies"
+            referencedColumns: ["movie_id"]
+          },
+          {
+            foreignKeyName: "leases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      movies: {
+        Row: {
+          created_at: string | null
+          director: string
+          imdb_id: string | null
+          movie_id: number
+          release_year: number | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          director: string
+          imdb_id?: string | null
+          movie_id?: number
+          release_year?: number | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          director?: string
+          imdb_id?: string | null
+          movie_id?: number
+          release_year?: number | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          contact_info: string | null
+          created_at: string | null
+          email: string
+          name: string
+          user_id: number
+        }
+        Insert: {
+          contact_info?: string | null
+          created_at?: string | null
+          email: string
+          name: string
+          user_id?: number
+        }
+        Update: {
+          contact_info?: string | null
+          created_at?: string | null
+          email?: string
+          name?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
