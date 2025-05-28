@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { movies as initialMovies, users as initialUsers, leases as initialLeases } from '../data/mockData';
 import { Movie, User, Lease } from '../types/database';
@@ -11,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Film, Search, Users, Calendar, TrendingUp } from 'lucide-react';
+import { Film, Search, Users, Calendar, TrendingUp, ArrowUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -20,18 +19,59 @@ const Index = () => {
   const [leases, setLeases] = useState<Lease[]>(initialLeases);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Available' | 'Leased'>('all');
+  const [movieSortBy, setMovieSortBy] = useState<'title' | 'director' | 'release_year' | 'status'>('title');
+  const [leaseSortBy, setLeaseSortBy] = useState<'lease_date' | 'due_date' | 'user_name' | 'status'>('lease_date');
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [showRentDialog, setShowRentDialog] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
   
   const { toast } = useToast();
 
-  const filteredMovies = movies.filter(movie => {
-    const matchesSearch = movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         movie.director.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || movie.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const sortMovies = (movies: Movie[], sortBy: string) => {
+    return [...movies].sort((a, b) => {
+      switch (sortBy) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'director':
+          return a.director.localeCompare(b.director);
+        case 'release_year':
+          return b.release_year - a.release_year; // Newest first
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const sortLeases = (leases: Lease[], sortBy: string) => {
+    return [...leases].sort((a, b) => {
+      switch (sortBy) {
+        case 'lease_date':
+          return new Date(b.lease_date).getTime() - new Date(a.lease_date).getTime(); // Newest first
+        case 'due_date':
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime(); // Soonest first
+        case 'user_name':
+          return (a.user_name || '').localeCompare(b.user_name || '');
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const filteredMovies = sortMovies(
+    movies.filter(movie => {
+      const matchesSearch = movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           movie.director.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || movie.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }),
+    movieSortBy
+  );
+
+  const sortedLeases = sortLeases(leases, leaseSortBy);
 
   const availableMovies = movies.filter(m => m.status === 'Available');
   const activeLeases = leases.filter(l => l.status === 'Active');
@@ -150,14 +190,14 @@ const Index = () => {
             <Card className="bg-gray-900/80 border-gray-800 backdrop-blur-sm">
               <CardContent className="p-6 text-center">
                 <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{availableMovies.length}</div>
+                <div className="text-2xl font-bold text-white">{movies.filter(m => m.status === 'Available').length}</div>
                 <div className="text-gray-400">Available</div>
               </CardContent>
             </Card>
             <Card className="bg-gray-900/80 border-gray-800 backdrop-blur-sm">
               <CardContent className="p-6 text-center">
                 <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{activeLeases.length}</div>
+                <div className="text-2xl font-bold text-white">{leases.filter(l => l.status === 'Active').length}</div>
                 <div className="text-gray-400">Active Rentals</div>
               </CardContent>
             </Card>
@@ -210,6 +250,18 @@ const Index = () => {
                       <SelectItem value="Leased">Currently Rented</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={movieSortBy} onValueChange={(value) => setMovieSortBy(value as any)}>
+                    <SelectTrigger className="w-full md:w-48 bg-gray-800 border-gray-700 text-white">
+                      <ArrowUpDown className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="title">Title (A-Z)</SelectItem>
+                      <SelectItem value="director">Director (A-Z)</SelectItem>
+                      <SelectItem value="release_year">Year (Newest)</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -240,7 +292,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="leases">
-            <LeaseManagement leases={leases} onReturnMovie={handleReturnMovie} />
+            <LeaseManagement leases={sortedLeases} onReturnMovie={handleReturnMovie} />
           </TabsContent>
         </Tabs>
       </div>

@@ -3,8 +3,10 @@ import { Lease } from '../types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Film, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, User, Film, Clock, ArrowUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 interface LeaseManagementProps {
   leases: Lease[];
@@ -13,6 +15,7 @@ interface LeaseManagementProps {
 
 const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
   const { toast } = useToast();
+  const [sortBy, setSortBy] = useState<'lease_date' | 'due_date' | 'user_name' | 'status'>('lease_date');
 
   const handleReturn = (leaseId: number, movieTitle: string) => {
     onReturnMovie(leaseId);
@@ -37,15 +40,49 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
     return 'bg-blue-600';
   };
 
+  const sortLeases = (leases: Lease[], sortBy: string) => {
+    return [...leases].sort((a, b) => {
+      switch (sortBy) {
+        case 'lease_date':
+          return new Date(b.lease_date).getTime() - new Date(a.lease_date).getTime(); // Newest first
+        case 'due_date':
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime(); // Soonest first
+        case 'user_name':
+          return (a.user_name || '').localeCompare(b.user_name || '');
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const activeLeases = leases.filter(lease => lease.status === 'Active');
+  const sortedActiveLeases = sortLeases(activeLeases, sortBy);
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white flex items-center">
-        <Calendar className="w-6 h-6 mr-2 text-red-500" />
-        Active Leases
-      </h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Calendar className="w-6 h-6 mr-2 text-red-500" />
+          Active Leases
+        </h2>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+          <SelectTrigger className="w-full sm:w-48 bg-gray-800 border-gray-700 text-white">
+            <ArrowUpDown className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-800 border-gray-700">
+            <SelectItem value="lease_date">Lease Date (Newest)</SelectItem>
+            <SelectItem value="due_date">Due Date (Soonest)</SelectItem>
+            <SelectItem value="user_name">User Name (A-Z)</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {leases.filter(lease => lease.status === 'Active').map((lease) => {
+        {sortedActiveLeases.map((lease) => {
           const daysUntilDue = getDaysUntilDue(lease.due_date);
           const statusColor = getStatusColor(lease.status, daysUntilDue);
           
@@ -98,7 +135,7 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
         })}
       </div>
       
-      {leases.filter(lease => lease.status === 'Active').length === 0 && (
+      {sortedActiveLeases.length === 0 && (
         <Card className="bg-gray-900 border-gray-800">
           <CardContent className="p-8 text-center">
             <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
