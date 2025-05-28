@@ -1,5 +1,4 @@
 
-import { Lease } from '../types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, User, Film, Clock, ArrowUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Lease = Tables<'leases'> & {
+  user_name?: string;
+  movie_title?: string;
+};
 
 interface LeaseManagementProps {
   leases: Lease[];
@@ -33,7 +38,7 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
     return diffDays;
   };
 
-  const getStatusColor = (status: string, daysUntilDue: number) => {
+  const getStatusColor = (status: string | null, daysUntilDue: number) => {
     if (status === 'Returned') return 'bg-green-600';
     if (status === 'Overdue' || daysUntilDue < 0) return 'bg-red-600';
     if (daysUntilDue <= 3) return 'bg-yellow-600';
@@ -50,7 +55,7 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
         case 'user_name':
           return (a.user_name || '').localeCompare(b.user_name || '');
         case 'status':
-          return a.status.localeCompare(b.status);
+          return (a.status || '').localeCompare(b.status || '');
         default:
           return 0;
       }

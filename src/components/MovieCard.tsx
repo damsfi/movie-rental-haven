@@ -1,9 +1,11 @@
 
-import { Movie } from '../types/database';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Film, Calendar } from 'lucide-react';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Movie = Tables<'movies'>;
 
 interface MovieCardProps {
   movie: Movie;
@@ -11,7 +13,7 @@ interface MovieCardProps {
 }
 
 const MovieCard = ({ movie, onRent }: MovieCardProps) => {
-  const generatePosterUrl = (imdbId: string, title: string) => {
+  const generatePosterUrl = (imdbId: string | null, title: string) => {
     // Create a placeholder poster based on movie title
     const colors = ['from-red-500', 'from-blue-500', 'from-green-500', 'from-purple-500', 'from-yellow-500'];
     const colorIndex = title.length % colors.length;

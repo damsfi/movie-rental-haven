@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import type { Tables } from '@/integrations/supabase/types';
@@ -15,6 +16,10 @@ import { useToast } from '@/hooks/use-toast';
 
 type User = Tables<'users'>;
 type Movie = Tables<'movies'>;
+type Lease = Tables<'leases'> & {
+  user_name?: string;
+  movie_title?: string;
+};
 
 const Index = () => {
   const { users, movies, leases, loading, error, addUser, rentMovie, returnMovie } = useSupabaseData();
@@ -36,9 +41,9 @@ const Index = () => {
         case 'director':
           return a.director.localeCompare(b.director);
         case 'release_year':
-          return b.release_year - a.release_year; // Newest first
+          return (b.release_year || 0) - (a.release_year || 0); // Newest first
         case 'status':
-          return a.status.localeCompare(b.status);
+          return (a.status || '').localeCompare(b.status || '');
         default:
           return 0;
       }
@@ -55,7 +60,7 @@ const Index = () => {
         case 'user_name':
           return (a.user_name || '').localeCompare(b.user_name || '');
         case 'status':
-          return a.status.localeCompare(b.status);
+          return (a.status || '').localeCompare(b.status || '');
         default:
           return 0;
       }
@@ -73,9 +78,6 @@ const Index = () => {
   );
 
   const sortedLeases = sortLeases(leases, leaseSortBy);
-
-  const availableMovies = movies.filter(m => m.status === 'Available');
-  const activeLeases = leases.filter(l => l.status === 'Active');
 
   const handleRentMovie = (movieId: number) => {
     setSelectedMovieId(movieId);
