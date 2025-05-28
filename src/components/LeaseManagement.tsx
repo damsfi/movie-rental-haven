@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Film, Clock, ArrowUpDown } from 'lucide-react';
+import { Calendar, User, Film, Clock, ArrowUpDown, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import type { Tables } from '@/integrations/supabase/types';
@@ -25,8 +25,8 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
   const handleReturn = (leaseId: number, movieTitle: string) => {
     onReturnMovie(leaseId);
     toast({
-      title: "Movie Returned",
-      description: `${movieTitle} has been successfully returned`,
+      title: "Return Processed",
+      description: `${movieTitle} has been successfully returned to inventory`,
     });
   };
 
@@ -39,10 +39,10 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
   };
 
   const getStatusColor = (status: string | null, daysUntilDue: number) => {
-    if (status === 'Returned') return 'bg-green-600';
-    if (status === 'Overdue' || daysUntilDue < 0) return 'bg-red-600';
-    if (daysUntilDue <= 3) return 'bg-yellow-600';
-    return 'bg-blue-600';
+    if (status === 'Returned') return 'bg-green-600 text-white';
+    if (status === 'Overdue' || daysUntilDue < 0) return 'bg-red-600 text-white';
+    if (daysUntilDue <= 3) return 'bg-yellow-600 text-white';
+    return 'bg-blue-600 text-white';
   };
 
   const sortLeases = (leases: Lease[], sortBy: string) => {
@@ -68,35 +68,38 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-white flex items-center">
-          <Calendar className="w-6 h-6 mr-2 text-red-500" />
-          Active Leases
-        </h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+            <Calendar className="w-6 h-6 mr-3 text-blue-600" />
+            Active Rental Management
+          </h2>
+          <p className="text-gray-600 mt-1">Monitor and manage current movie rentals</p>
+        </div>
         <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
-          <SelectTrigger className="w-full sm:w-48 bg-gray-800 border-gray-700 text-white">
+          <SelectTrigger className="w-full sm:w-48 bg-white border-gray-300 focus:border-blue-500">
             <ArrowUpDown className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="lease_date">Lease Date (Newest)</SelectItem>
+          <SelectContent className="bg-white border-gray-200">
+            <SelectItem value="lease_date">Rental Date (Newest)</SelectItem>
             <SelectItem value="due_date">Due Date (Soonest)</SelectItem>
-            <SelectItem value="user_name">User Name (A-Z)</SelectItem>
+            <SelectItem value="user_name">Customer Name (A-Z)</SelectItem>
             <SelectItem value="status">Status</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {sortedActiveLeases.map((lease) => {
           const daysUntilDue = getDaysUntilDue(lease.due_date);
           const statusColor = getStatusColor(lease.status, daysUntilDue);
           
           return (
-            <Card key={lease.lease_id} className="bg-gray-900 border-gray-800 hover:border-red-500 transition-colors">
+            <Card key={lease.lease_id} className="bg-white shadow-md hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-white text-lg flex items-center">
-                    <Film className="w-5 h-5 mr-2 text-red-500" />
+                  <CardTitle className="text-gray-900 text-lg flex items-center">
+                    <Film className="w-5 h-5 mr-2 text-blue-600" />
                     {lease.movie_title}
                   </CardTitle>
                   <Badge className={statusColor}>
@@ -106,22 +109,22 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
               </CardHeader>
               
               <CardContent className="space-y-4">
-                <div className="flex items-center text-gray-400 text-sm">
-                  <User className="w-4 h-4 mr-2" />
+                <div className="flex items-center text-gray-700 font-medium">
+                  <User className="w-4 h-4 mr-2 text-blue-600" />
                   {lease.user_name}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Lease Date</p>
-                    <p className="text-white flex items-center">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-gray-500 font-medium">Rental Date</p>
+                    <p className="text-gray-900 flex items-center mt-1">
                       <Calendar className="w-3 h-3 mr-1" />
                       {new Date(lease.lease_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Due Date</p>
-                    <p className="text-white flex items-center">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-gray-500 font-medium">Due Date</p>
+                    <p className="text-gray-900 flex items-center mt-1">
                       <Clock className="w-3 h-3 mr-1" />
                       {new Date(lease.due_date).toLocaleDateString()}
                     </p>
@@ -130,9 +133,10 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
                 
                 <Button 
                   onClick={() => handleReturn(lease.lease_id, lease.movie_title || 'Movie')}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
-                  Mark as Returned
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Process Return
                 </Button>
               </CardContent>
             </Card>
@@ -141,10 +145,11 @@ const LeaseManagement = ({ leases, onReturnMovie }: LeaseManagementProps) => {
       </div>
       
       {sortedActiveLeases.length === 0 && (
-        <Card className="bg-gray-900 border-gray-800">
-          <CardContent className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">No active leases at the moment</p>
+        <Card className="bg-white shadow-md border border-gray-200">
+          <CardContent className="p-12 text-center">
+            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Rentals</h3>
+            <p className="text-gray-600">All movies are currently available for rental</p>
           </CardContent>
         </Card>
       )}

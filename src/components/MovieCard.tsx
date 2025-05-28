@@ -2,7 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Film, Calendar } from 'lucide-react';
+import { Film, Calendar, Star } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Movie = Tables<'movies'>;
@@ -13,42 +13,63 @@ interface MovieCardProps {
 }
 
 const MovieCard = ({ movie, onRent }: MovieCardProps) => {
-  const generatePosterUrl = (imdbId: string | null, title: string) => {
-    // Create a placeholder poster based on movie title
-    const colors = ['from-red-500', 'from-blue-500', 'from-green-500', 'from-purple-500', 'from-yellow-500'];
-    const colorIndex = title.length % colors.length;
-    return colors[colorIndex];
+  const getPosterUrl = (imdbId: string | null, title: string) => {
+    if (imdbId) {
+      // Use OMDb API poster - this is a free service
+      return `https://img.omdbapi.com/?i=${imdbId}&apikey=trilogy&h=400`;
+    }
+    // Fallback to a placeholder service with movie title
+    return `https://via.placeholder.com/300x450/1a1a1a/ffffff?text=${encodeURIComponent(title)}`;
   };
 
   const isAvailable = movie.status === 'Available';
 
   return (
-    <Card className="group bg-gray-900 border-gray-800 hover:border-red-500 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+    <Card className="group bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-200 overflow-hidden">
       <CardContent className="p-0">
-        <div className={`h-64 bg-gradient-to-br ${generatePosterUrl(movie.imdb_id, movie.title)} to-gray-800 rounded-t-lg flex items-center justify-center relative overflow-hidden`}>
-          <Film className="w-16 h-16 text-white/30" />
-          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300" />
+        <div className="relative h-80 overflow-hidden">
+          <img 
+            src={getPosterUrl(movie.imdb_id, movie.title)}
+            alt={`${movie.title} poster`}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = `https://via.placeholder.com/300x450/2563eb/ffffff?text=${encodeURIComponent(movie.title)}`;
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <Badge 
-            className={`absolute top-3 right-3 ${isAvailable ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+            className={`absolute top-3 right-3 ${isAvailable 
+              ? 'bg-green-600 hover:bg-green-700 text-white' 
+              : 'bg-red-600 hover:bg-red-700 text-white'
+            } shadow-lg`}
           >
             {movie.status}
           </Badge>
+          {movie.release_year && (
+            <div className="absolute top-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-sm font-medium">
+              {movie.release_year}
+            </div>
+          )}
         </div>
         
         <div className="p-4 space-y-3">
           <div>
-            <h3 className="font-bold text-lg text-white group-hover:text-red-400 transition-colors duration-300 line-clamp-2">
+            <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-700 transition-colors duration-300 line-clamp-2 leading-tight">
               {movie.title}
             </h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-600 text-sm mt-1 flex items-center">
+              <Film className="w-3 h-3 mr-1" />
               Directed by {movie.director}
             </p>
           </div>
           
-          <div className="flex items-center text-gray-500 text-sm">
-            <Calendar className="w-4 h-4 mr-2" />
-            {movie.release_year}
-          </div>
+          {movie.release_year && (
+            <div className="flex items-center text-gray-500 text-sm">
+              <Calendar className="w-4 h-4 mr-2" />
+              Released {movie.release_year}
+            </div>
+          )}
         </div>
       </CardContent>
       
@@ -56,12 +77,12 @@ const MovieCard = ({ movie, onRent }: MovieCardProps) => {
         <Button 
           onClick={() => onRent?.(movie.movie_id)}
           disabled={!isAvailable}
-          className={`w-full ${isAvailable 
-            ? 'bg-red-600 hover:bg-red-700 text-white' 
-            : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-          }`}
+          className={`w-full font-semibold ${isAvailable 
+            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg' 
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          } transition-all duration-200`}
         >
-          {isAvailable ? 'Rent Now' : 'Currently Rented'}
+          {isAvailable ? 'Rent Movie' : 'Currently Rented'}
         </Button>
       </CardFooter>
     </Card>

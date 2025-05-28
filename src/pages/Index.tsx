@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Film, Search, Users, Calendar, TrendingUp, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Film, Search, Users, Calendar, TrendingUp, ArrowUpDown, Loader2, Building2, Star, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type User = Tables<'users'>;
@@ -88,7 +88,7 @@ const Index = () => {
     if (!selectedUser || !selectedMovieId) {
       toast({
         title: "Error",
-        description: "Please select a user to rent the movie",
+        description: "Please select a customer to rent the movie",
         variant: "destructive"
       });
       return;
@@ -105,13 +105,13 @@ const Index = () => {
       setSelectedMovieId(null);
 
       toast({
-        title: "Success",
+        title: "Rental Successful",
         description: `${movie?.title} has been rented to ${user?.name}`,
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to rent movie. Please try again.",
+        description: "Failed to process rental. Please try again.",
         variant: "destructive"
       });
     }
@@ -123,13 +123,13 @@ const Index = () => {
       await returnMovie(leaseId);
       
       toast({
-        title: "Movie Returned",
+        title: "Return Processed",
         description: `${lease?.movie_title} has been successfully returned`,
       });
     } catch (error) {
       toast({
         title: "Error", 
-        description: "Failed to return movie. Please try again.",
+        description: "Failed to process return. Please try again.",
         variant: "destructive"
       });
     }
@@ -139,13 +139,13 @@ const Index = () => {
     try {
       await addUser(newUserData);
       toast({
-        title: "Success",
-        description: "User added successfully",
+        title: "Customer Added",
+        description: "New customer has been successfully registered",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add user. Please try again.",
+        description: "Failed to add customer. Please try again.",
         variant: "destructive"
       });
     }
@@ -153,10 +153,10 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-red-500 mx-auto mb-4" />
-          <p className="text-white">Loading...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading your rental catalog...</p>
         </div>
       </div>
     );
@@ -164,116 +164,136 @@ const Index = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 text-lg mb-4">Error: {error}</p>
-          <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
-            Retry
-          </Button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <p className="text-red-700 text-lg mb-4 font-medium">System Error: {error}</p>
+            <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700 text-white">
+              Retry Connection
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-black">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-black via-gray-900 to-black">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-        <div className="relative container mx-auto px-4 py-16">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
-              <span className="text-red-500">Cinema</span>Rent
-            </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Your premium movie rental destination. Discover, rent, and enjoy the best films from our extensive collection.
-            </p>
-          </div>
+  const totalRevenue = leases.filter(l => l.status === 'Returned').length * 5.99; // Assuming $5.99 per rental
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-gray-900/80 border-gray-800 backdrop-blur-sm">
-              <CardContent className="p-6 text-center">
-                <Film className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{movies.length}</div>
-                <div className="text-gray-400">Total Movies</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-900/80 border-gray-800 backdrop-blur-sm">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{movies.filter(m => m.status === 'Available').length}</div>
-                <div className="text-gray-400">Available</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-900/80 border-gray-800 backdrop-blur-sm">
-              <CardContent className="p-6 text-center">
-                <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{leases.filter(l => l.status === 'Active').length}</div>
-                <div className="text-gray-400">Active Rentals</div>
-              </CardContent>
-            </Card>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Professional Header */}
+      <div className="bg-white shadow-lg border-b">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-600 p-3 rounded-lg">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">CinemaRent Pro</h1>
+                <p className="text-gray-600">Professional Movie Rental Management System</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Business Dashboard</p>
+              <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString()}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Business Metrics Dashboard */}
       <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <Film className="w-10 h-10 text-blue-600 mx-auto mb-3" />
+              <div className="text-3xl font-bold text-gray-900">{movies.length}</div>
+              <div className="text-gray-600 font-medium">Total Inventory</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <TrendingUp className="w-10 h-10 text-green-600 mx-auto mb-3" />
+              <div className="text-3xl font-bold text-gray-900">{movies.filter(m => m.status === 'Available').length}</div>
+              <div className="text-gray-600 font-medium">Available Now</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <Calendar className="w-10 h-10 text-orange-600 mx-auto mb-3" />
+              <div className="text-3xl font-bold text-gray-900">{leases.filter(l => l.status === 'Active').length}</div>
+              <div className="text-gray-600 font-medium">Active Rentals</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <DollarSign className="w-10 h-10 text-purple-600 mx-auto mb-3" />
+              <div className="text-3xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</div>
+              <div className="text-gray-600 font-medium">Total Revenue</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="movies" className="space-y-8">
-          <TabsList className="bg-gray-900 border-gray-800 p-1">
-            <TabsTrigger value="movies" className="data-[state=active]:bg-red-600">
+          <TabsList className="bg-white shadow-md border p-1 rounded-lg">
+            <TabsTrigger value="movies" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-medium">
               <Film className="w-4 h-4 mr-2" />
-              Movies
+              Movie Catalog
             </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-red-600">
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-medium">
               <Users className="w-4 h-4 mr-2" />
-              Users
+              Customer Management
             </TabsTrigger>
-            <TabsTrigger value="leases" className="data-[state=active]:bg-red-600">
+            <TabsTrigger value="leases" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-medium">
               <Calendar className="w-4 h-4 mr-2" />
-              Leases
+              Rental Management
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="movies" className="space-y-6">
             {/* Search and Filters */}
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-white shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Browse Movies</CardTitle>
+                <CardTitle className="text-gray-900 flex items-center">
+                  <Search className="w-5 h-5 mr-2 text-blue-600" />
+                  Movie Catalog Management
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                     <Input
-                      placeholder="Search movies or directors..."
+                      placeholder="Search by title or director..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-gray-800 border-gray-700 text-white"
+                      className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-                    <SelectTrigger className="w-full md:w-48 bg-gray-800 border-gray-700 text-white">
-                      <SelectValue placeholder="Filter by status" />
+                    <SelectTrigger className="w-full md:w-48 border-gray-300 focus:border-blue-500">
+                      <SelectValue placeholder="Filter by availability" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="all">All Movies</SelectItem>
                       <SelectItem value="Available">Available</SelectItem>
                       <SelectItem value="Leased">Currently Rented</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={movieSortBy} onValueChange={(value) => setMovieSortBy(value as any)}>
-                    <SelectTrigger className="w-full md:w-48 bg-gray-800 border-gray-700 text-white">
+                    <SelectTrigger className="w-full md:w-48 border-gray-300 focus:border-blue-500">
                       <ArrowUpDown className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="title">Title (A-Z)</SelectItem>
                       <SelectItem value="director">Director (A-Z)</SelectItem>
                       <SelectItem value="release_year">Year (Newest)</SelectItem>
-                      <SelectItem value="status">Status</SelectItem>
+                      <SelectItem value="status">Availability</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,7 +301,7 @@ const Index = () => {
             </Card>
 
             {/* Movies Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {filteredMovies.map((movie) => (
                 <MovieCard
                   key={movie.movie_id}
@@ -292,10 +312,11 @@ const Index = () => {
             </div>
 
             {filteredMovies.length === 0 && (
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="p-8 text-center">
-                  <Film className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400 text-lg">No movies found matching your criteria</p>
+              <Card className="bg-white shadow-md">
+                <CardContent className="p-12 text-center">
+                  <Film className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Movies Found</h3>
+                  <p className="text-gray-600">No movies match your current search criteria</p>
                 </CardContent>
               </Card>
             )}
@@ -311,36 +332,40 @@ const Index = () => {
         </Tabs>
       </div>
 
-      {/* Rent Movie Dialog */}
+      {/* Professional Rent Dialog */}
       <Dialog open={showRentDialog} onOpenChange={setShowRentDialog}>
-        <DialogContent className="bg-gray-900 border-gray-800 text-white">
+        <DialogContent className="bg-white border-gray-200 max-w-md">
           <DialogHeader>
-            <DialogTitle>Rent Movie</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Select a user to rent this movie to.
+            <DialogTitle className="text-gray-900 text-xl font-semibold">Process Rental</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Select a customer to complete this rental transaction.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Select value={selectedUser?.toString()} onValueChange={(value) => setSelectedUser(Number(value))}>
-              <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                <SelectValue placeholder="Select a user" />
+              <SelectTrigger className="border-gray-300 focus:border-blue-500">
+                <Users className="w-4 h-4 mr-2 text-gray-400" />
+                <SelectValue placeholder="Choose customer" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-white border-gray-200">
                 {users.map((user) => (
                   <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                    {user.name} ({user.email})
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-sm text-gray-500">{user.email}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex space-x-2">
-              <Button onClick={confirmRent} className="flex-1 bg-red-600 hover:bg-red-700">
-                Confirm Rental
+            <div className="flex space-x-3">
+              <Button onClick={confirmRent} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                Complete Rental
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setShowRentDialog(false)}
-                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </Button>
